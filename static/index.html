@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>LabelMe</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <strong>Labelling</strong>
+      <span>YOLO labels</span>
+    </div>
+    <div class="tools" id="tools">
+      <button type="button" data-tool="polygon" title="Polygon (P)">Polygon</button>
+      <button type="button" data-tool="rectangle" class="active" title="Rectangle (R)">Rectangle</button>
+      <button type="button" data-tool="circle" title="Circle (C)">Circle</button>
+      <button type="button" data-tool="line" title="Line (L)">Line</button>
+      <button type="button" data-tool="linestrip" title="Linestrip (T)">Linestrip</button>
+      <button type="button" data-tool="point" title="Point (M)">Point</button>
+      <button type="button" data-tool="edit" title="Edit (V)">Edit</button>
+      <button type="button" data-tool="pan" title="Pan (H)">Pan</button>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="btn-undo" title="Undo (Ctrl+Z)">Undo</button>
+      <button type="button" id="btn-redo" title="Redo (Ctrl+Y)">Redo</button>
+      <button type="button" id="btn-fit" title="Fit (0)">Fit</button>
+      <button type="button" id="btn-prev" title="Previous image (PageUp)">Prev</button>
+      <button type="button" id="btn-next" title="Next image (PageDown)">Next</button>
+      <button type="button" id="btn-save" title="Save (Ctrl+S)">Save</button>
+    </div>
+  </header>
+
+  <div class="workspace">
+    <aside class="dock left">
+      <div class="dataset-field">
+        <label for="dataset">Dataset</label>
+        <select id="dataset"></select>
+      </div>
+      <div class="dock-head">
+        <span>Files <span id="file-count"></span></span>
+        <button type="button" id="btn-refresh">Refresh</button>
+      </div>
+      <select id="folder"></select>
+      <input id="file-filter" type="search" placeholder="Filter name" />
+      <div id="file-list"></div>
+      <div id="workdir" class="workdir"></div>
+    </aside>
+
+    <main>
+      <div id="stage">
+        <canvas id="canvas"></canvas>
+        <div id="empty" class="empty">
+          <h2>No images in the work folder</h2>
+          <p id="empty-path"></p>
+          <p>Choose a dataset, then press Refresh. Rectangles load from each set's <code>labels</code> folder and save back as YOLO <code>.txt</code> files.</p>
+        </div>
+        <div id="image-meta" class="image-meta">
+          <div id="image-score" class="image-score hidden" title="0.6 × map50 + 0.4 × false positive"></div>
+          <div id="image-classes" class="image-score image-classes hidden" title="Per-class mAP50"></div>
+          <div id="image-fp" class="image-score image-classes hidden" title="False positive count"></div>
+        </div>
+        <div class="stage-bottom">
+          <div id="hint"></div>
+          <div id="image-size" class="image-size hidden"></div>
+        </div>
+      </div>
+    </main>
+
+    <aside class="dock right">
+      <div class="dock-head">
+        <span>Objects</span>
+        <button type="button" id="btn-clear" title="Remove every box from this image">Clear boxes</button>
+      </div>
+      <div id="shape-list"></div>
+      <div class="dock-head">
+        <span>Labels</span>
+      </div>
+      <label class="ask-row">
+        <input id="ask-label" type="checkbox" />
+        Ask for a label on each shape
+      </label>
+      <label class="ask-row">
+        <input id="show-labels" type="checkbox" checked />
+        Show labels in image
+      </label>
+      <div id="label-list"></div>
+      <form id="add-label-form" class="add-label">
+        <input id="new-label" type="text" placeholder="Add label" maxlength="128" />
+        <button type="submit">Add</button>
+      </form>
+      <details class="help">
+        <summary>Shortcuts</summary>
+        <ul>
+          <li><b>P</b> polygon, <b>R</b> rectangle, <b>C</b> circle, <b>L</b> line, <b>T</b> linestrip, <b>M</b> point</li>
+          <li><b>V</b> edit, <b>H</b> pan, <b>0</b> fit, wheel zoom, Space+drag pan</li>
+          <li><b>Enter</b> finish polygon or linestrip, <b>Esc</b> cancel, <b>Backspace</b> undo point</li>
+          <li><b>Delete</b> remove shape. Arrows nudge the selected shape. Shift nudges by 10 px</li>
+          <li>Rectangles save into the dataset <code>labels</code> folder. Other shapes stay in a JSON file beside the image</li>
+          <li><b>PageUp</b> / <b>PageDown</b> change image. <b>Ctrl+S</b> save, <b>Ctrl+Z</b> undo, <b>Ctrl+Y</b> redo</li>
+          <li>Double-click a polygon edge in edit mode to insert a point</li>
+        </ul>
+      </details>
+    </aside>
+  </div>
+
+  <footer>
+    <span id="status">Loading…</span>
+    <span id="toast"></span>
+  </footer>
+
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <form id="label-form">
+      <h2 id="modal-title">Object label</h2>
+      <label>
+        Label
+        <input id="label-input" list="label-options" autocomplete="off" required maxlength="128" />
+      </label>
+      <datalist id="label-options"></datalist>
+      <div id="label-chips"></div>
+      <label>
+        Group id
+        <input id="group-input" inputmode="numeric" placeholder="optional" />
+      </label>
+      <label>
+        Description
+        <input id="desc-input" maxlength="500" />
+      </label>
+      <div class="modal-actions">
+        <button type="submit">OK</button>
+        <button type="button" id="modal-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div id="color-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="color-title">
+    <form id="color-form">
+      <h2 id="color-title">Class color</h2>
+      <div id="sv" class="sv"><div id="sv-cursor"></div></div>
+      <input id="hue" type="range" min="0" max="360" step="1" aria-label="Hue" />
+      <div class="color-readout">
+        <span id="color-preview"></span>
+        <input id="color-hex" maxlength="7" spellcheck="false" autocomplete="off" aria-label="Hex color" />
+      </div>
+      <div id="color-presets" class="presets"></div>
+      <div class="modal-actions">
+        <button type="submit">Apply</button>
+        <button type="button" id="color-cancel">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

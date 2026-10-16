@@ -1,0 +1,27 @@
+{
+  "/home/PoWork/turbovision/Po/dataset_old/yolo": {
+    "helmet": "#800000",
+    "vest": "#008000",
+    "gloves": "#808000",
+    "goggles": "#000080"
+  },
+  "/home/PoWork/turbovision/Po/dataset_fall": {
+    "fallen person": "#fe0000"
+  },
+  "/home/PoWork/turbovision/Po/dataset_ppe": {
+    "helmet": "#ff0000",
+    "vest": "#8000ff",
+    "gloves": "#ffe14a",
+    "goggles": "#00fa5d"
+  },
+  "/home/PoWork/turbovision/PoWork/dataset_ppe": {
+    "helmet": "#ff0000",
+    "vest": "#8000ff",
+    "gloves": "#ffe14a",
+    "goggles": "#00fa5d",
+    "safety helmet": "#ff0000",
+    "high-visibility safety vest": "#8000ff",
+    "protective gloves": "#ffe14a",
+    "protective eyewear": "#00fa5d"
+  }
+}
